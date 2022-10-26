@@ -10,9 +10,8 @@ import numpy
 import string
 import random
 import argparse
-import tensorflow as tf
-import pandas
-import tensorflow.keras as keras
+import tflite_runtime.interpreter as tflite 
+#import tensorflow.keras as keras
 from PIL import Image
 
 
@@ -55,76 +54,76 @@ def main():
     img_files = os.listdir(args.captcha_dir)
     img_files = sorted(img_files)
 
-    with tf.device('/cpu:0'):
-        with open(args.output, 'w',newline='\n') as output_file:
-            json_file = open(args.model_name+'.json', 'r')
-            loaded_model_json = json_file.read()
-            json_file.close()
-            # model = keras.models.model_from_json(loaded_model_json)
-            # model.load_weights(args.model_name+'.h5')
-            # model.compile(loss='categorical_crossentropy',
-            #               optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
-            #               metrics=['accuracy'])
-            # keras_model = tf.keras.models.load_model(args.model_name + '.h5')
-            # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-            # converter.optimizations = [tf.lite.Optimize.DEFAULT]
-            # tflite_model = converter.convert()
-            interpreter = tf.lite.Interpreter(args.model_name+'.tflite')
-            interpreter.allocate_tensors()
-            # tflite_model.allocate_tensors()
+#    with tflite.device('/cpu:0'):
+    with open(args.output, 'w',newline='\n') as output_file:
+        json_file = open(args.model_name+'.json', 'r')
+        loaded_model_json = json_file.read()
+        json_file.close()
+        # model = keras.models.model_from_json(loaded_model_json)
+        # model.load_weights(args.model_name+'.h5')
+        # model.compile(loss='categorical_crossentropy',
+        #               optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
+        #               metrics=['accuracy'])
+        # keras_model = tf.keras.models.load_model(args.model_name + '.h5')
+        # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
+        # converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        # tflite_model = converter.convert()
+        interpreter = tflite.Interpreter(args.model_name+'.tflite')
+        interpreter.allocate_tensors()
+        # tflite_model.allocate_tensors()
 
-            for x in img_files:
-                # load image and preprocess it
-                raw_data = Image.open(os.path.join(args.captcha_dir, x))
+        for x in img_files:
+            # load image and preprocess it
+            raw_data = Image.open(os.path.join(args.captcha_dir, x))
 
-                # rgb_data = Image.fromarray(raw_data)
+            # rgb_data = Image.fromarray(raw_data)
 
-                image = numpy.array(raw_data) / 255.0
-                (c, h, w) = image.shape
-                image = image.reshape([-1, c, h, w])
+            image = numpy.array(raw_data) / 255.0
+            (c, h, w) = image.shape
+            image = image.reshape([-1, c, h, w])
 
-                input_details = interpreter.get_input_details()
-                output_details = interpreter.get_output_details()
+            input_details = interpreter.get_input_details()
+            output_details = interpreter.get_output_details()
 
-                image = image.astype('float32')
-                # print(image_data)
-                interpreter.set_tensor(input_details[0]['index'],image)
-                interpreter.invoke()
-                captcha = ""
-                captcha_final = ""
-                # print(output_details)
-                output_data_0 = interpreter.get_tensor(output_details[3]['index'])
-                output_data_1 = interpreter.get_tensor(output_details[5]['index'])
-                output_data_2 = interpreter.get_tensor(output_details[0]['index'])
-                output_data_3 = interpreter.get_tensor(output_details[4]['index'])
-                output_data_4 = interpreter.get_tensor(output_details[2]['index'])
-                output_data_5 = interpreter.get_tensor(output_details[1]['index'])
+            image = image.astype('float32')
+            # print(image_data)
+            interpreter.set_tensor(input_details[0]['index'],image)
+            interpreter.invoke()
+            captcha = ""
+            captcha_final = ""
+            # print(output_details)
+            output_data_0 = interpreter.get_tensor(output_details[3]['index'])
+            output_data_1 = interpreter.get_tensor(output_details[5]['index'])
+            output_data_2 = interpreter.get_tensor(output_details[0]['index'])
+            output_data_3 = interpreter.get_tensor(output_details[4]['index'])
+            output_data_4 = interpreter.get_tensor(output_details[2]['index'])
+            output_data_5 = interpreter.get_tensor(output_details[1]['index'])
 
-                final1 = decode(captcha_symbols, output_data_0)
-                final2 = decode(captcha_symbols, output_data_1)
-                final3 = decode(captcha_symbols, output_data_2)
-                final4 = decode(captcha_symbols, output_data_3)
-                final5 = decode(captcha_symbols, output_data_4)
-                final6 = decode(captcha_symbols, output_data_5)
-                captcha = captcha + final1 + final2 + final3 + final4 + final5 +final6
-                # for i in range(4):
-                #     # captcha = ""
-                #     output_data = interpreter.get_tensor(output_details[i]['index'])
-                #     final = decode(captcha_symbols,output_data)
-                #     captcha = captcha + final
-                #     print(final)
-                # # captcha = ""
-                # #     for i in  (final):
-                #     if (final != '/'):
-                #         captcha = captcha + final
-                # print(captcha)
-                for i in captcha:
-                    if(i != '/'):
-                        captcha_final = captcha_final + i
+            final1 = decode(captcha_symbols, output_data_0)
+            final2 = decode(captcha_symbols, output_data_1)
+            final3 = decode(captcha_symbols, output_data_2)
+            final4 = decode(captcha_symbols, output_data_3)
+            final5 = decode(captcha_symbols, output_data_4)
+            final6 = decode(captcha_symbols, output_data_5)
+            captcha = captcha + final1 + final2 + final3 + final4 + final5 +final6
+            # for i in range(4):
+            #     # captcha = ""
+            #     output_data = interpreter.get_tensor(output_details[i]['index'])
+            #     final = decode(captcha_symbols,output_data)
+            #     captcha = captcha + final
+            #     print(final)
+            # # captcha = ""
+            # #     for i in  (final):
+            #     if (final != '/'):
+            #         captcha = captcha + final
+            # print(captcha)
+            for i in captcha:
+                if(i != '/'):
+                    captcha_final = captcha_final + i
 
-                output_file.write(x + "," + captcha_final + "\n")
+            output_file.write(x + "," + captcha_final + "\n")
 
-                print('Classified ' + x)
+            print('Classified ' + x)
 
 if __name__ == '__main__':
     main()
