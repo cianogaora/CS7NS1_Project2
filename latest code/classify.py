@@ -16,7 +16,7 @@ from PIL import Image
 
 
 def decode(characters, y):
-    print(y)
+#    print(y)
     y = numpy.argmax(numpy.array(y), axis=1)
     return ''.join([characters[x] for x in y])
 
